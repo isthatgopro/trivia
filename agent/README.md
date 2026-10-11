@@ -8,4 +8,4 @@
 
 Created / 建立日期：
 
-Last updated / 最後更新：2026-10-11 19:49 CST
+Last updated / 最後更新：2026-10-11 19:50 UTC+8 (Taipei)
