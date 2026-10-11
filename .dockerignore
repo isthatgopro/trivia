@@ -1,0 +1,5 @@
+# Keep the build context to just the Dockerfile.
+.git
+agent/
+*.pdf
+*.md

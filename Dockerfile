@@ -1,65 +1,102 @@
 # ==========================================
-# Dockerfile to Build GCC 7.5.0 on Ubuntu 22.04
+# Generic GCC toolchain image on Ubuntu
+#
+# Build any GCC version from source:
+#   docker build -t trivia-gcc:7.5.0 .
+#   docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 .
+#   docker build --build-arg BASE_IMAGE=ubuntu:24.04 \
+#                --build-arg GCC_VERSION=14.2.0 -t trivia-gcc:14.2.0 .
 # ==========================================
 
-# 1. Use Ubuntu 22.04 as the base image
-FROM ubuntu:22.04
+# 1. Base image and toolchain version are build arguments for flexibility
+ARG BASE_IMAGE=ubuntu:22.04
+ARG GCC_VERSION=7.5.0
+ARG GCC_MIRROR=https://ftp.gnu.org/gnu/gcc
+ARG GCC_LANGUAGES=c,c++
 
-# 2. Set environment variables to avoid interactive prompts during package installation
+# 2. Builder stage: compile GCC from source (heavy, cached per version)
+FROM ${BASE_IMAGE} AS builder
+
+# Re-declare ARGs for this stage (required after each FROM)
+ARG GCC_VERSION
+ARG GCC_MIRROR
+ARG GCC_LANGUAGES
+
+# 3. Avoid interactive prompts and set default parallelism (override with --build-arg JOBS=N)
+ARG JOBS
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 3. Update package lists and install essential build dependencies
-RUN apt-get update && apt-get install -y \
+# 4. Install build dependencies in one layer, clean apt lists in the same RUN
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     wget \
     tar \
-    libgmp-dev \
-    libmpfr-dev \
-    libmpc-dev \
+    xz-utils \
     flex \
     bison \
     texinfo \
+    libgmp-dev \
+    libmpfr-dev \
+    libmpc-dev \
     libisl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Define GCC version as a build argument for flexibility
-ARG GCC_VERSION=7.5.0
-
-# 5. Set the working directory for source code
+# 5. Download GCC source (.tar.gz first, fall back to .tar.xz for newer releases)
 WORKDIR /usr/local/src
+RUN set -eux; \
+    if [ -z "${JOBS:-}" ]; then JOBS=$(nproc); echo "JOBS=${JOBS}" > /tmp/jobs.env; else echo "JOBS=${JOBS}" > /tmp/jobs.env; fi; \
+    for ext in tar.gz tar.xz; do \
+      if wget "${GCC_MIRROR}/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.${ext}"; then \
+        tar -xf "gcc-${GCC_VERSION}.${ext}"; \
+        rm "gcc-${GCC_VERSION}.${ext}"; \
+        break; \
+      fi; \
+    done; \
+    test -d "gcc-${GCC_VERSION}"
 
-# 6. Download and extract GCC source code
-RUN wget https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.gz \
-    && tar -xf gcc-${GCC_VERSION}.tar.gz \
-    && rm gcc-${GCC_VERSION}.tar.gz
-
-# 7. Navigate into the GCC source directory
+# 6. Fetch GCC prerequisites (gmp/mpfr/mpc/isl) into the source tree
 WORKDIR /usr/local/src/gcc-${GCC_VERSION}
-
-# 8. Download GCC prerequisites (libraries and dependencies)
 RUN ./contrib/download_prerequisites
 
-# 9. Create a separate build directory to keep the source tree clean
+# 7. Configure out-of-tree with a versioned prefix
+ARG INSTALL_PREFIX=/usr/local/gcc-${GCC_VERSION}
 RUN mkdir build
 WORKDIR /usr/local/src/gcc-${GCC_VERSION}/build
-
-# 10. Configure the GCC build with desired options
-RUN ../configure --prefix=/usr/local/gcc-${GCC_VERSION} \
-    --enable-languages=c,c++ \
+RUN ../configure --prefix="${INSTALL_PREFIX}" \
+    --enable-languages="${GCC_LANGUAGES}" \
     --disable-multilib
 
-# 11. Compile GCC using all available CPU cores for efficiency
-RUN make -j$(nproc)
-
-# 12. Install GCC to the specified prefix directory
+# 8. Compile using all cores by default, then install
+RUN set -eux; . /tmp/jobs.env; make -j"${JOBS}"
 RUN make install
 
-# 13. Update environment variables to prioritize the newly installed GCC
-ENV PATH=/usr/local/gcc-${GCC_VERSION}/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/gcc-${GCC_VERSION}/lib64:$LD_LIBRARY_PATH
+# 9. Slim runtime stage: copy only the installed toolchain
+FROM ${BASE_IMAGE} AS runtime
 
-# 14. Verify the GCC installation by checking versions
+ARG GCC_VERSION
+ARG INSTALL_PREFIX=/usr/local/gcc-${GCC_VERSION}
+
+LABEL org.opencontainers.image.title="trivia-gcc" \
+      org.opencontainers.image.description="GCC toolchain built from source on Ubuntu" \
+      org.opencontainers.image.version="${GCC_VERSION}"
+
+# 10. Runtime needs libgmp/mpfr/mpc present for cc1; keep the layer minimal
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libgmp10 \
+    libmpfr6 \
+    libmpc3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder ${INSTALL_PREFIX} ${INSTALL_PREFIX}
+
+# 11. Prefer the freshly built toolchain on PATH
+ENV PATH=${INSTALL_PREFIX}/bin:$PATH \
+    LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib64:${INSTALL_PREFIX}/lib:$LD_LIBRARY_PATH
+
+# 12. Sanity-check the installed compilers
 RUN gcc --version && g++ --version
 
-# 15. Set the default command to bash for interactive use
+# 13. Interactive default
 CMD ["bash"]
