@@ -1,6 +1,8 @@
 # ==========================================
 # Generic GCC toolchain image on Ubuntu
 #
+# The build context is intentionally Dockerfile-only; see .dockerignore.
+#
 # Build any GCC version from source:
 #   docker build -t trivia-gcc:7.5.0 .
 #   docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 .
@@ -13,6 +15,7 @@ ARG BASE_IMAGE=ubuntu:22.04
 ARG GCC_VERSION=7.5.0
 ARG GCC_MIRROR=https://ftp.gnu.org/gnu/gcc
 ARG GCC_LANGUAGES=c,c++
+ARG INSTALL_PREFIX=/usr/local/gcc-${GCC_VERSION}
 
 # 2. Builder stage: compile GCC from source (heavy, cached per version)
 FROM ${BASE_IMAGE} AS builder
@@ -21,6 +24,7 @@ FROM ${BASE_IMAGE} AS builder
 ARG GCC_VERSION
 ARG GCC_MIRROR
 ARG GCC_LANGUAGES
+ARG INSTALL_PREFIX
 
 # 3. Avoid interactive prompts and set default parallelism (override with --build-arg JOBS=N)
 ARG JOBS
@@ -45,7 +49,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 5. Download GCC source (.tar.gz first, fall back to .tar.xz for newer releases)
 WORKDIR /usr/local/src
 RUN set -eux; \
-    if [ -z "${JOBS:-}" ]; then JOBS=$(nproc); echo "JOBS=${JOBS}" > /tmp/jobs.env; else echo "JOBS=${JOBS}" > /tmp/jobs.env; fi; \
+    jobs="${JOBS:-$(nproc)}"; \
+    case "${jobs}" in ''|*[!0-9]*) echo "JOBS must be a positive integer" >&2; exit 1;; esac; \
+    test "${jobs}" -gt 0; \
+    echo "JOBS=${jobs}" > /tmp/jobs.env; \
     for ext in tar.gz tar.xz; do \
       if wget "${GCC_MIRROR}/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.${ext}"; then \
         tar -xf "gcc-${GCC_VERSION}.${ext}"; \
@@ -60,7 +67,6 @@ WORKDIR /usr/local/src/gcc-${GCC_VERSION}
 RUN ./contrib/download_prerequisites
 
 # 7. Configure out-of-tree with a versioned prefix
-ARG INSTALL_PREFIX=/usr/local/gcc-${GCC_VERSION}
 RUN mkdir build
 WORKDIR /usr/local/src/gcc-${GCC_VERSION}/build
 RUN ../configure --prefix="${INSTALL_PREFIX}" \
@@ -75,7 +81,7 @@ RUN make install
 FROM ${BASE_IMAGE} AS runtime
 
 ARG GCC_VERSION
-ARG INSTALL_PREFIX=/usr/local/gcc-${GCC_VERSION}
+ARG INSTALL_PREFIX
 
 LABEL org.opencontainers.image.title="trivia-gcc" \
       org.opencontainers.image.description="GCC toolchain built from source on Ubuntu" \
@@ -93,7 +99,7 @@ COPY --from=builder ${INSTALL_PREFIX} ${INSTALL_PREFIX}
 
 # 11. Prefer the freshly built toolchain on PATH
 ENV PATH=${INSTALL_PREFIX}/bin:$PATH \
-    LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib64:${INSTALL_PREFIX}/lib:$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib64:${INSTALL_PREFIX}/lib
 
 # 12. Sanity-check the installed compilers
 RUN gcc --version && g++ --version

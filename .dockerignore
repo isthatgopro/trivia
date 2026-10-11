@@ -1,5 +1,4 @@
-# Keep the build context to just the Dockerfile.
-.git
-agent/
-*.pdf
-*.md
+# The Dockerfile downloads GCC from GNU mirrors and never copies repository files.
+# Keep the context tiny, including when the useful_scripts submodule is checked out.
+*
+!Dockerfile

@@ -1,6 +1,6 @@
 # AGENTS.md — trivia
 
-GCC 7.5.0 toolchain image on Ubuntu 22.04, plus the TUM IN2393 paper PDF. Three files, no app code, tests, or CI.
+This repo contains a configurable GCC toolchain image, the TUM IN2393 paper PDF, and the independent `useful_scripts` Git submodule. There is no app code or CI in the parent repo.
 
 ## Build
 - Only build step is `docker build` from repo root; default builds GCC 7.5.0: `docker build -t trivia-gcc:7.5.0 .`
@@ -9,9 +9,10 @@ GCC 7.5.0 toolchain image on Ubuntu 22.04, plus the TUM IN2393 paper PDF. Three 
 
 ## Conventions
 - Single `Dockerfile`, numbered comments describe each stage — preserve that style. Multi-stage (`builder` → `runtime`); keep `apt-get` cleanup (`rm -rf /var/lib/apt/lists/*`) in the same `RUN`.
-- `.dockerignore` keeps the build context to the `Dockerfile` (excludes paper, `agent/`, markdown).
+- `.dockerignore` keeps the build context to `Dockerfile` only; the build downloads GCC itself and must not include the paper, `agent/`, or `useful_scripts/`.
 - `IN2393_ml4rg_group11_paper.pdf` is a frozen artifact, never edit or re-export.
-- `README.md` is bilingual (English alongside zh-TW). Don't invent scripts it doesn't have.
+- `README.md` is bilingual (English alongside zh-TW) and documents the submodule; keep it aligned with the actual Docker arguments and repository layout.
+- `useful_scripts/` is a Git submodule. Do not edit its files from the parent repo; make changes in its own checkout/repository, then update the parent submodule pointer.
 
 ## Constraints
 - No test runner, linter, or workflow config exists. Don't add CI unless asked.
