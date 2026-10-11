@@ -9,10 +9,10 @@
 
 | English | 繁體中文 |
 | --- | --- |
-| `Dockerfile` — multi-stage GCC builder and runtime image. | `Dockerfile`——多階段 GCC 建置器與執行環境映像。 |
-| `.dockerignore` — sends only `Dockerfile` as build context because the build downloads its own sources. | `.dockerignore`——只傳送 `Dockerfile` 作為建置 context，因為建置會自行下載原始碼。 |
+| `docker/Dockerfile` — multi-stage GCC builder and runtime image. | `docker/Dockerfile`——多階段 GCC 建置器與執行環境映像。 |
+| `docker/.dockerignore` — sends only the Dockerfile as build context because the build downloads its own sources. | `docker/.dockerignore`——只傳送 Dockerfile 作為建置 context，因為建置會自行下載原始碼。 |
 | `useful_scripts/` — Git submodule pointing to [isthatgopro/useful_scripts](https://github.com/isthatgopro/useful_scripts). | `useful_scripts/`——指向 [isthatgopro/useful_scripts](https://github.com/isthatgopro/useful_scripts) 的 Git submodule。 |
-| `IN2393_ml4rg_group11_paper.pdf` — frozen paper artifact; do not edit or re-export. | `IN2393_ml4rg_group11_paper.pdf`——已定稿的論文檔案，請勿編輯或重新匯出。 |
+| `paper/IN2393_ml4rg_group11_paper.pdf` — frozen paper artifact; do not edit or re-export. | `paper/IN2393_ml4rg_group11_paper.pdf`——已定稿的論文檔案，請勿編輯或重新匯出。 |
 | `agent/AGENTS.md` — repository-specific instructions for coding agents. | `agent/AGENTS.md`——本 repository 的 coding agent 專用說明。 |
 
 ## GCC image / GCC 映像
@@ -27,14 +27,14 @@
 
 ```bash
 # English / English
-docker build -t trivia-gcc:7.5.0 .
-docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 .
+docker build -t trivia-gcc:7.5.0 docker/
+docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 docker/
 docker build \
   --build-arg BASE_IMAGE=ubuntu:24.04 \
   --build-arg GCC_VERSION=14.2.0 \
   --build-arg GCC_LANGUAGES=c,c++,fortran \
   --build-arg JOBS=8 \
-  -t trivia-gcc:14.2.0 .
+  -t trivia-gcc:14.2.0 docker/
 
 # Run the compiler / 執行編譯器
 docker run --rm trivia-gcc:7.5.0 gcc --version
@@ -85,7 +85,7 @@ repository 提交更新後的 submodule 指標。
 
 | English | 繁體中文 |
 | --- | --- |
-| `IN2393_ml4rg_group11_paper.pdf` is retained as a reference artifact from the TUM IN2393 project. | `IN2393_ml4rg_group11_paper.pdf` 是 TUM IN2393 專案保留的參考論文檔案。 |
+| `paper/IN2393_ml4rg_group11_paper.pdf` is retained as a reference artifact from the TUM IN2393 project. | `paper/IN2393_ml4rg_group11_paper.pdf` 是 TUM IN2393 專案保留的參考論文檔案。 |
 | It is not part of the Docker build context and is not copied into generated images. | 它不屬於 Docker build context，也不會被複製到產生的映像中。 |
 
 ## License / 授權

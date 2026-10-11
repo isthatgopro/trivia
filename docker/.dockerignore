@@ -1,4 +1,4 @@
 # The Dockerfile downloads GCC from GNU mirrors and never copies repository files.
-# Keep the context tiny, including when the useful_scripts submodule is checked out.
+# Build with docker/ as the context: docker build -t trivia-gcc:7.5.0 docker/
 *
 !Dockerfile

@@ -3,11 +3,11 @@
 #
 # The build context is intentionally Dockerfile-only; see .dockerignore.
 #
-# Build any GCC version from source:
-#   docker build -t trivia-gcc:7.5.0 .
-#   docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 .
+# Build any GCC version from source (run from the repo root):
+#   docker build -t trivia-gcc:7.5.0 docker/
+#   docker build --build-arg GCC_VERSION=13.2.0 -t trivia-gcc:13.2.0 docker/
 #   docker build --build-arg BASE_IMAGE=ubuntu:24.04 \
-#                --build-arg GCC_VERSION=14.2.0 -t trivia-gcc:14.2.0 .
+#                --build-arg GCC_VERSION=14.2.0 -t trivia-gcc:14.2.0 docker/
 # ==========================================
 
 # 1. Base image and toolchain version are build arguments for flexibility
