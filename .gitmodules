@@ -1,0 +1,3 @@
+[submodule "useful_scripts"]
+	path = useful_scripts
+	url = https://github.com/isthatgopro/useful_scripts.git
