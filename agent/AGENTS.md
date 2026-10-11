@@ -10,7 +10,7 @@ GCC 7.5.0 toolchain image on Ubuntu 22.04, plus the TUM IN2393 paper PDF. Three 
 ## Conventions
 - Single `Dockerfile`, numbered comments describe each stage — preserve that style.
 - `IN2393_ml4rg_group11_paper.pdf` is a frozen artifact, never edit or re-export.
-- `README.md` is a stub (`TODO: add several scripts here`). Don't invent scripts it doesn't have.
+- `README.md` is bilingual (English alongside zh-TW). Don't invent scripts it doesn't have.
 
 ## Constraints
 - No test runner, linter, or workflow config exists. Don't add CI unless asked.
