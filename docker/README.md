@@ -6,4 +6,6 @@
 | Build from the repository root with `docker build -t trivia-gcc:7.5.0 docker/`. | 請在 repository 根目錄執行 `docker build -t trivia-gcc:7.5.0 docker/` 建置。 |
 | Original purpose: group the GCC image files (`Dockerfile` + `.dockerignore`) that previously lived at the repository root. | 最初用途：收納原本放在 repository 根目錄的 GCC 映像檔案（`Dockerfile` + `.dockerignore`）。 |
 
-Created / 建立日期：2026-10-11
+Created / 建立日期：
+
+Last updated / 最後更新：2026-10-11 19:49 CST

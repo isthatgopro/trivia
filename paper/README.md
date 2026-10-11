@@ -6,4 +6,6 @@
 | Not part of the Docker build context and never copied into images. | 不屬於 Docker build context，也不會被複製到映像中。 |
 | Original purpose: separate the frozen paper artifact from the build files at the repository root. | 最初用途：將定稿論文與 repository 根目錄的建置檔案分開存放。 |
 
-Created / 建立日期：2026-10-11
+Created / 建立日期：
+
+Last updated / 最後更新：2026-10-11 19:49 CST
